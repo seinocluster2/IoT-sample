@@ -1,0 +1,16 @@
+{% extends "iot/base.html" %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block content %}
+
+<form method="post" action="{% url 'iot:login' %}">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+    <button type="submit" class="btn btn-dark">ログイン</button>
+    {% endbuttons %}
+    <input type="hidden" name="next" value="{{ next }}">
+</form>
+
+{% endblock %}

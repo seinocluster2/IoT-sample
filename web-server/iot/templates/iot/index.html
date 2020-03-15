@@ -1,0 +1,192 @@
+{% extends "iot/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col">
+    <form name="time-form" id="time-form" action="{% url 'iot:reload' %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="show-time">表示時間(X時間前)</label>
+        <select class="form-control" id="id-show-time-select" name="name-show-time-select" >
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option>12</option>
+          <option>24</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-secondary mb-2">更新</button>
+    </div>
+  </form>
+</div>
+<div class="row">
+  <div class="col-md">
+    <canvas class="my-4 w-100" id="tempChart" width="900" height="380"></canvas>
+  </div>
+  <div class="col-md">
+    <canvas class="my-4 w-100" id="humidChart" width="900" height="380"></canvas>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md">
+    <canvas class="my-4 w-100" id="prsChart" width="900" height="380"></canvas>
+  </div>
+  <div class="col-md">
+    <canvas class="my-4 w-100" id="illChart" width="900" height="380"></canvas>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">エアコン電源ボタン</h5>
+        <p class="card-text">電源のボタン操作</p>
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="button" id="button-switch-aircond" class="btn btn-secondary">ON/OFF</button>
+        </div>
+      </div>
+      <div class="card-body" id="result-aircond"></div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">照明電源ボタン</h5>
+        <p class="card-text">電源のボタン操作</p>
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="button" id="button-switch-light" class="btn btn-secondary">ON/OFF</button>
+        </div>
+      </div>
+      <div class="card-body" id="result-light"></div>
+    </div> 
+  </div>
+</div>
+{% endblock %}
+<!-- Optional JavaScript -->
+{% block script %}
+<script src="{% static 'iot/js/js.cookie-2.2.1.min.js' %}"></script>
+<script src="{% static 'iot/js/Chart.bundle.min.js' %}"></script>
+{{ iot_data_temperature|json_script:"iot_data_temperature" }}
+{{ iot_data_humidity|json_script:"iot_data_humidity" }}
+{{ iot_data_pressure|json_script:"iot_data_pressure"}}
+{{ iot_data_illumination|json_script:"iot_data_illumination"}}
+<script>
+  function setChart(chart_data, min, max, label) {
+    var chart_data = {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: label,
+          data: chart_data,
+        }]
+      },
+      options: {
+        scales: {
+          xAxes: [{
+            type: 'time',
+            distribution: 'linear',
+            time: {
+              displayFormats: {
+                minute: 'HH:mm',
+                hour: 'HH'
+              }
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              min: min,
+              max: max
+            }
+          }]
+        }
+      }
+    };
+    return chart_data;
+  }
+  var tempJson = JSON.parse(document.getElementById('iot_data_temperature').textContent);
+  var humidJson = JSON.parse(document.getElementById('iot_data_humidity').textContent);
+  var prsJson = JSON.parse(document.getElementById('iot_data_pressure').textContent);
+  var illJson = JSON.parse(document.getElementById('iot_data_illumination').textContent);
+  var tempCtx = document.getElementById('tempChart').getContext('2d');
+  var humidCtx = document.getElementById('humidChart').getContext('2d');
+  var prsCtx = document.getElementById('prsChart').getContext('2d');
+  var illCtx = document.getElementById('illChart').getContext('2d');
+  if (tempChart) {
+    tempChart.destroy()
+  }
+  if (humidChart)  {
+    humidChart.destroy()
+  }
+  if (prsChart) {
+    prsChart.destroy()
+  }
+  if (illChart) {
+    illChart.destroy()
+  }
+  var tempChart = new Chart(tempCtx, setChart(tempJson, -5, 40, '温度'));
+  var humidChart = new Chart(humidCtx, setChart(humidJson, 0, 100, '湿度'));
+  var prsChart =  new Chart(prsCtx, setChart(prsJson, 1000, 1030, '気圧'));
+  var illChart = new Chart(illCtx, setChart(illJson, 0, 100, '照度'));
+  $("#time-form").submit( function(event) {
+    event.preventDefault();
+    var form = $(this);
+  $.ajax({
+    url: form.prop("action"),
+    method: form.prop("method"),
+    data: form.serialize(),
+    timeout: 10000,
+    dataType: "text",
+  })
+  .done( function(data) {
+    var json = JSON.parse(data);
+    if (tempChart) {
+      tempChart.destroy()
+    }
+    if (humidChart)  {
+      humidChart.destroy()
+    }
+    if (prsChart) {
+      prsChart.destroy()
+    }
+    if (illChart) {
+      illChart.destroy()
+    }
+    tempChart = new Chart(tempCtx, setChart(json.iot_data_temperature, -5, 40, '温度'));
+    humidChart = new Chart(humidCtx, setChart(json.iot_data_humidity, 0, 100, '湿度'));
+    prsChart =  new Chart(prsCtx, setChart(json.iot_data_pressure, 1000, 1030, '気圧'));
+    illChart = new Chart(illCtx, setChart(json.iot_data_illumination, 0, 100, '照度'));
+    })
+  });
+  function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+  }
+  function switchOp(event){
+    $(event.data.id).text('通信中...');
+    var csrftoken = Cookies.get('csrftoken');
+    $.ajax({
+        url: "{% url 'iot:switch' %}",
+        method: "POST",
+        data: {
+          "type": event.data.thing,
+        },
+        timeout: 5000,
+        beforeSend: function(xhr, settings) {
+          if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+        }
+    })
+    .done(function(data) {
+        $(event.data.id).text('処理成功：' + data);
+    })
+    .fail(function() {
+        $(event.data.id).text('処理失敗.');
+    });
+  }
+  $('#button-switch-aircond').on('click', {id: '#result-aircond', thing: 'aircond'}, switchOp);
+  $('#button-switch-light').on('click', {id: '#result-light', thing: 'light'}, switchOp);
+</script>
+{% endblock %}

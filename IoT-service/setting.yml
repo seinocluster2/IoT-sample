@@ -1,0 +1,39 @@
+---
+# Setting
+
+# Log file
+LOG_FILE: "xxxxx.log"
+
+# A random programmatic shadow client ID.
+SHADOW_CLIENT: "xxxxx"
+
+# The unique hostname that &IoT; generated for
+# this device.
+HOST_NAME: "xxxxx"
+PORT: 8883
+
+# The relative path to the correct root CA file for &IoT;,
+# which you have already saved onto this device.
+ROOT_CA: "xxxxx"
+
+# The relative path to your private key file that
+# &IoT; generated for this device, which you
+# have already saved onto this device.
+PRIVATE_KEY: "xxxxx"
+
+# The relative path to your certificate file that
+# &IoT; generated for this device, which you
+# have already saved onto this device.
+CERT_FILE: "xxxxx"
+
+# A programmatic shadow handler name prefix.
+SHADOW_HANDLER: "xxxxx"
+
+# MQTT Topic Operation
+TOPIC_OP: "aaa/bbb/ccc"
+
+# MQTT Topic Report
+TOPIC_REPORT: "ddd/eee"
+
+# SNS ARN
+SNS_ARN: "xxxxx"
